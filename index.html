@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shahadat Chat Bot — Auto Downloader</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;padding:20px;display:flex;align-items:center;
+  justify-content:center;background:#050505;color:#fff;font-family:Arial,sans-serif
+}
+.card{
+  width:min(480px,100%);padding:25px;border:1px solid #242424;
+  border-radius:24px;background:#101010;box-shadow:0 0 35px rgba(0,255,120,.08)
+}
+.logo{text-align:center;font-size:25px;font-weight:900}
+.sub{text-align:center;color:#aaa;margin:7px 0 24px;font-size:13px}
+input{
+  width:100%;padding:16px;border-radius:14px;border:1px solid #333;
+  outline:none;background:#181818;color:white;font-size:15px
+}
+input:focus{border-color:#00e676}
+button{
+  width:100%;padding:15px;margin-top:12px;border:0;border-radius:14px;
+  background:#00df70;color:#00150a;font-weight:900;font-size:16px
+}
+button:disabled{opacity:.5}
+.status{text-align:center;min-height:22px;margin:17px 0;color:#aaa}
+.error{color:#ff6262}.ok{color:#4cff9b}
+.result{display:none}
+video{width:100%;border-radius:15px;background:#000}
+.download{
+  display:block;text-align:center;text-decoration:none;margin-top:12px;
+  padding:14px;border-radius:13px;background:#202020;color:#fff;font-weight:800
+}
+.small{font-size:11px;color:#666;text-align:center;margin-top:18px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🔥🚀 Shahadat Chat Bot</div>
+  <div class="sub">📥⚡ Auto Downloader ⚡📂</div>
+
+  <input id="url" type="url" placeholder="Paste video URL here">
+
+  <button id="btn">📥 Download Video</button>
+
+  <div id="status" class="status"></div>
+
+  <div id="result" class="result">
+    <video id="video" controls playsinline></video>
+    <a id="save" class="download" download>⬇️ Save Video</a>
+  </div>
+
+  <div class="small">
+    Backend uses the original <b>alldown()</b> downloader flow.
+  </div>
+</div>
+
+<script>
+const input = document.getElementById("url");
+const btn = document.getElementById("btn");
+const status = document.getElementById("status");
+const result = document.getElementById("result");
+const video = document.getElementById("video");
+const save = document.getElementById("save");
+
+async function downloadVideo(){
+  const url = input.value.trim();
+
+  result.style.display = "none";
+  status.className = "status";
+
+  if(!/^https?:\\/\\//i.test(url)){
+    status.className = "status error";
+    status.textContent = "⚠️ Enter a valid http/https URL.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "⏳ Processing...";
+  status.textContent = "⚠️ Getting video...";
+
+  try{
+    const response = await fetch("/api/download", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({url})
+    });
+
+    const data = await response.json();
+
+    if(!response.ok || !data.ok){
+      throw new Error(data.error || "Download failed.");
+    }
+
+    video.src = data.url;
+    save.href = data.url;
+    save.download = data.filename || "auto-video.mp4";
+
+    result.style.display = "block";
+    status.className = "status ok";
+    status.textContent = "🎬 Enjoy the Video 🎀";
+  }catch(error){
+    status.className = "status error";
+    status.textContent = "❌ " + error.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "📥 Download Video";
+  }
+}
+
+btn.addEventListener("click", downloadVideo);
+input.addEventListener("keydown", e => {
+  if(e.key === "Enter") downloadVideo();
+});
+</script>
+</body>
+</html>
